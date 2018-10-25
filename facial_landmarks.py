@@ -27,7 +27,7 @@ predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 
 # detect faces in the grayscale image
-vs=VideoStream(src=0).start()
+vs=VideoStream('rtsp://avisco:Sof7t3k!2018@192.168.180.185/0').start()
 xaLimiteL=36
 xaLimiteU=40
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -45,7 +45,9 @@ while True:
         shape = predictor(gray, rect)
         shape = face_utils.shape_to_np(shape)
         #busco cada punto en el shape
-        for(x,y) in shape:                
+        for(x,y) in shape:   
+            cv2.circle(frame, (x, y), 2, (0, 0, 255), -1)
+
             #aislo los 2 puntos correspondientes al ojo izquierdo (parpado arriba y abajo)
             if (xa>=xaLimiteL and xa<=xaLimiteU):
                 if(xa%2!=0):                
@@ -61,7 +63,7 @@ while True:
                         if diferencia>4:
                             cv2.putText(frame,"Ojo abierto",(0,20),font, 0.6,(0,255,0),1, cv2.LINE_AA)                            
                         else:
-                            cv2.putText(frame,"Ojo cerrado",(0,20),font, 0.6,(0,255,0),1, cv2.LINE_AA)                            
+                            cv2.putText(frame,"Ojo cerrado",(0,20),font, 0.8,(0,0,255),1, cv2.LINE_AA)                            
 
 
             else:
