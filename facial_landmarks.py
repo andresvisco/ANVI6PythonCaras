@@ -8,8 +8,20 @@ import argparse
 import imutils
 import dlib
 import cv2
-from imutils.video import VideoStream
+import requests 
+import asyncio
+import _thread
 
+from imutils.video import VideoStream
+import matplotlib.pyplot as plt
+import json
+
+async def enviar(stringValor):
+    response=requests.post(url, data=data_json, headers=headers)
+
+
+tiempoOjoAbierto=0
+tiempoOjoCerrado=0
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -27,12 +39,20 @@ predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 
 # detect faces in the grayscale image
-vs=VideoStream('rtsp://avisco:Sof7t3k!2018@192.168.180.185/0').start()
+#vs=VideoStream('rtsp://avisco:Sof7t3k!2018@192.168.180.185/0').start()
+vs=VideoStream(0).start()
 xaLimiteL=36
 xaLimiteU=40
 font = cv2.FONT_HERSHEY_SIMPLEX
+headers = {'Content-type': 'application/json'}
+url="https://api.powerbi.com/beta/864ee999-c538-44a0-bddd-0449de62df6d/datasets/486df8a5-7ba5-4b0b-a427-49106ce3eed8/rows?key=rVG4IqlILgO9dCeE9Px9Ad3L8et8p3OsxiyrE0JQsaFNsRbVOAU6DcjrLnnQ28PsOHBSU9%2BMtxLFQT0%2BVZh8JA%3D%3D"
+
+
+def enviarDatos(datosJson):
+    response=requests.post(url, data_json, headers=headers)
 
 while True:
+
     frame=vs.read()
     frame = imutils.resize(frame, width=500)
     gray=cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -61,21 +81,36 @@ while True:
                         diferencia = abs(xaP[0] - xaP[1])
                         
                         if diferencia>4:
-                            cv2.putText(frame,"Ojo abierto",(0,20),font, 0.6,(0,255,0),1, cv2.LINE_AA)                            
+                            tiempoOjoAbierto+=1
+                            cv2.putText(frame,"Ojos abiertos",(0,20),font, 0.6,(0,255,0),1, cv2.LINE_AA)
                         else:
-                            cv2.putText(frame,"Ojo cerrado",(0,20),font, 0.8,(0,0,255),1, cv2.LINE_AA)                            
+                            tiempoOjoCerrado+=1
+                            cv2.putText(frame,"Ojos cerrados",(0,20),font, 0.8,(0,0,255),1, cv2.LINE_AA)                            
 
+                        cv2.putText(frame,str("Tiempo abierto: " + str(tiempoOjoAbierto)),(320,350),font, 0.4,(255,255,255),1, cv2.LINE_AA)                            
+                        cv2.putText(frame,str("Tiempo cerrado: " + str(tiempoOjoCerrado)),(320,370),font, 0.4,(255,255,255),1, cv2.LINE_AA)                            
+                        data={"abierto":tiempoOjoAbierto,"cerrado":tiempoOjoCerrado}
+                        data_json=json.dumps(data)
+                        print(_thread._count())
+                        if(_thread._count()>4):
+                            continue
+                        else:
+                            _thread.start_new_thread(enviarDatos, (data_json,))
 
+                        
             else:
                 xaP=[]
-                
             xa+=1
         cv2.imshow("frame", frame)
     key = cv2.waitKey(1) & 0xFF
     if key == ord("q"):
+        
         cv2.destroyAllWindows()
         vs.stop()
         break
+
+
+
 
 # show the output image with the face detections + facial landmarks
 
